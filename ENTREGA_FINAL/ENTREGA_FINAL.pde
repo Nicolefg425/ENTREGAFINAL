@@ -4,6 +4,11 @@ import processing.sound.FFT;
 SoundFile soundfile;
 FFT fft;
 
+//Fondo
+color fondo = color(0);
+int ultimoMovimientoMouse = 0;
+int tiempoEspera = 2000;
+
 //Ilustraciones y fuente
 PImage ojo, mom3;
 PFont miFuente;
@@ -56,7 +61,7 @@ class Particula {
 
   void mover() {
     pos.add(vel);
-    
+
     // Rebote en los bordes del sketch
     if (pos.x - radio < 0 || pos.x + radio > width) {
       vel.x *= -1;
@@ -105,15 +110,19 @@ void setup() {
 
   startMillis = millis();
 
+  println("Mueve el mouse para cambiar el color de fondo");
   println("Presiona la barra espaciadora para quitar la letra");
 }
 
 void draw() {
-  background(0);
+  if (millis() - ultimoMovimientoMouse > tiempoEspera) {
+    fondo = color(0);  // volver a fondo negro
+  }
+  background(fondo);
 
   float currentTime = (millis() - startMillis) / 1000.0;
   tiempo = currentTime;
-  
+
   // Letra actual
   String lineaActual = "";
   for (int i = 0; i < tiempoLetra.length; i++) {
@@ -141,57 +150,27 @@ void draw() {
       float sizeFactor = random(0.2, 0.5);
       image(mom3, x, y, mom3.width * sizeFactor, mom3.height * sizeFactor);
     }
-  }
+  } else if (currentTime >= inicioMomento4 && currentTime < inicioMomento4 + duracionMomento4) {
+    fft.analyze(spectrum);
 
-
-else if (currentTime >= inicioMomento4 && currentTime < inicioMomento4 + duracionMomento4) {
-  fft.analyze(spectrum);
-
-  float totalEnergy = 0;
-  for (int i = 0; i < bands; i++) {
-    totalEnergy += spectrum[i];
-  }
-
-  float baseRadius = map(totalEnergy, 0, 10, 250, 280);
-  baseRadius = constrain(baseRadius, 150, 280);
-
-  // Tiempo relativo desde inicio del momento 4
-  float t = currentTime - inicioMomento4;
-
-  if (t < 5) {
-    // Fase 1: círculos en espiral animados
-    particulas.clear(); // Borrar por si acaso
-    particulasInicializadas = false;
-
-    pushMatrix();
-    translate(width / 2, height / 2);
-    int levels = 8;
-    for (int i = levels; i > 0; i--) {
-      int num = i * 5;
-      float r = baseRadius * i / levels;
-
-      for (int j = 0; j < num; j++) {
-        float angle = TWO_PI * j / num;
-        float baseX = cos(angle) * r;
-        float baseY = sin(angle) * r;
-
-        float offsetX = sin(frameCount * 0.02 + j) * 20;
-        float offsetY = cos(frameCount * 0.02 + j) * 20;
-
-        float x = baseX + offsetX;
-        float y = baseY + offsetY;
-
-        fill(255, 100 + i * 20, 150, 180);
-        ellipse(x, y, r / 3, r / 3);
-      }
+    float totalEnergy = 0;
+    for (int i = 0; i < bands; i++) {
+      totalEnergy += spectrum[i];
     }
-    popMatrix();
-  } else {
-    // Fase 2: desintegración
 
-    if (!particulasInicializadas) {
-      // Solo se ejecuta una vez al pasar los 5 segundos
-      particulas.clear();
+    float baseRadius = map(totalEnergy, 0, 10, 250, 280);
+    baseRadius = constrain(baseRadius, 150, 280);
+
+    // Tiempo relativo desde inicio del momento 4
+    float t = currentTime - inicioMomento4;
+
+    if (t < 5) {
+      // Fase 1: círculos en espiral animados
+      particulas.clear(); // Borrar por si acaso
+      particulasInicializadas = false;
+
+      pushMatrix();
+      translate(width / 2, height / 2);
       int levels = 8;
       for (int i = levels; i > 0; i--) {
         int num = i * 5;
@@ -202,22 +181,49 @@ else if (currentTime >= inicioMomento4 && currentTime < inicioMomento4 + duracio
           float baseX = cos(angle) * r;
           float baseY = sin(angle) * r;
 
-          PVector posicion = new PVector(width/2 + baseX, height/2 + baseY);
-          float tam = r / 3;
-          color c = color(255, 100 + i * 20, 150, 180);
-          particulas.add(new Particula(posicion, tam, c));
+          float offsetX = sin(frameCount * 0.02 + j) * 20;
+          float offsetY = cos(frameCount * 0.02 + j) * 20;
+
+          float x = baseX + offsetX;
+          float y = baseY + offsetY;
+
+          fill(255, 100 + i * 20, 150, 180);
+          ellipse(x, y, r / 3, r / 3);
         }
       }
-      particulasInicializadas = true;
-    }
+      popMatrix();
+    } else {
+      // Fase 2: desintegración
 
-    // Dibujar y mover partículas
-    for (Particula p : particulas) {
-      p.mover();
-      p.dibujar();
+      if (!particulasInicializadas) {
+        // Solo se ejecuta una vez al pasar los 5 segundos
+        particulas.clear();
+        int levels = 8;
+        for (int i = levels; i > 0; i--) {
+          int num = i * 5;
+          float r = baseRadius * i / levels;
+
+          for (int j = 0; j < num; j++) {
+            float angle = TWO_PI * j / num;
+            float baseX = cos(angle) * r;
+            float baseY = sin(angle) * r;
+
+            PVector posicion = new PVector(width/2 + baseX, height/2 + baseY);
+            float tam = r / 3;
+            color c = color(255, 100 + i * 20, 150, 180);
+            particulas.add(new Particula(posicion, tam, c));
+          }
+        }
+        particulasInicializadas = true;
+      }
+
+      // Dibujar y mover partículas
+      for (Particula p : particulas) {
+        p.mover();
+        p.dibujar();
+      }
     }
   }
-}
 
 
   // Ilustraciones 1 y 2: Espiral y ojo (0 – 43 seg)
@@ -303,4 +309,9 @@ void keyPressed() {
   if (key == ' ') {
     mostrarTexto = !mostrarTexto;
   }
+}
+
+void mouseMoved() {
+  fondo = color(230, 200, 255);
+  ultimoMovimientoMouse = millis();
 }
