@@ -1,4 +1,4 @@
-//Sonido //<>// //<>// //<>// //<>// //<>// //<>//
+//Sonido //<>//
 import processing.sound.*;
 import processing.sound.FFT;
 SoundFile soundfile;
@@ -35,6 +35,7 @@ boolean sonidoIniciado = false;
 boolean mostrarTexto = true;
 
 //Letra
+color textoColor = color(255);
 String[] letras;
 float[] tiempoLetra = {
   0.0, 4.0, 9.0, 11.0, 13.0, 17.0, 21.0, 23.0, 25.0, 26.0, 29.0, 31.0, 36.0,
@@ -65,7 +66,6 @@ class Particula {
     // Rebote en los bordes del sketch
     if (pos.x - radio < 0 || pos.x + radio > width) {
       vel.x *= -1;
-      // Corrige posición si se sale del límite
       pos.x = constrain(pos.x, radio, width - radio);
     }
     if (pos.y - radio < 0 || pos.y + radio > height) {
@@ -105,18 +105,15 @@ void setup() {
   textFont(miFuente);
 
   //Imagenes
-  ojo = crearOjoVibrante();  // corregido nombre de función
+  ojo = crearOjoVibrante();
   mom3 = loadImage("ilustracion3.png");
 
   startMillis = millis();
-
-  println("Mueve el mouse para cambiar el color de fondo");
-  println("Presiona la barra espaciadora para quitar la letra");
 }
 
 void draw() {
   if (millis() - ultimoMovimientoMouse > tiempoEspera) {
-    fondo = color(0);  // volver a fondo negro
+    fondo = color(0);
   }
   background(fondo);
 
@@ -131,7 +128,7 @@ void draw() {
     }
   }
 
-  // Ilustración 3 (43 – 70 segundos)
+  // Ilustración 3
   if (currentTime >= inicioMomento3 && currentTime < inicioMomento3 + duracionMomento3) {
     fft.analyze(spectrum);
     loadImageEvent(index);
@@ -150,9 +147,11 @@ void draw() {
       float sizeFactor = random(0.2, 0.5);
       image(mom3, x, y, mom3.width * sizeFactor, mom3.height * sizeFactor);
     }
-  } else if (currentTime >= inicioMomento4 && currentTime < inicioMomento4 + duracionMomento4) {
-    fft.analyze(spectrum);
+  }
 
+  // Ilustración 4
+  else if (currentTime >= inicioMomento4 && currentTime < inicioMomento4 + duracionMomento4) {
+    fft.analyze(spectrum);
     float totalEnergy = 0;
     for (int i = 0; i < bands; i++) {
       totalEnergy += spectrum[i];
@@ -160,55 +159,42 @@ void draw() {
 
     float baseRadius = map(totalEnergy, 0, 10, 250, 280);
     baseRadius = constrain(baseRadius, 150, 280);
-
-    // Tiempo relativo desde inicio del momento 4
     float t = currentTime - inicioMomento4;
 
     if (t < 5) {
-      // Fase 1: círculos en espiral animados
-      particulas.clear(); // Borrar por si acaso
+      particulas.clear();
       particulasInicializadas = false;
-
       pushMatrix();
       translate(width / 2, height / 2);
       int levels = 8;
       for (int i = levels; i > 0; i--) {
         int num = i * 5;
         float r = baseRadius * i / levels;
-
         for (int j = 0; j < num; j++) {
           float angle = TWO_PI * j / num;
           float baseX = cos(angle) * r;
           float baseY = sin(angle) * r;
-
           float offsetX = sin(frameCount * 0.02 + j) * 20;
           float offsetY = cos(frameCount * 0.02 + j) * 20;
-
           float x = baseX + offsetX;
           float y = baseY + offsetY;
-
           fill(255, 100 + i * 20, 150, 180);
           ellipse(x, y, r / 3, r / 3);
         }
       }
       popMatrix();
     } else {
-      // Fase 2: desintegración
-
       if (!particulasInicializadas) {
-        // Solo se ejecuta una vez al pasar los 5 segundos
         particulas.clear();
         int levels = 8;
         for (int i = levels; i > 0; i--) {
           int num = i * 5;
           float r = baseRadius * i / levels;
-
           for (int j = 0; j < num; j++) {
             float angle = TWO_PI * j / num;
             float baseX = cos(angle) * r;
             float baseY = sin(angle) * r;
-
-            PVector posicion = new PVector(width/2 + baseX, height/2 + baseY);
+            PVector posicion = new PVector(width / 2 + baseX, height / 2 + baseY);
             float tam = r / 3;
             color c = color(255, 100 + i * 20, 150, 180);
             particulas.add(new Particula(posicion, tam, c));
@@ -216,8 +202,6 @@ void draw() {
         }
         particulasInicializadas = true;
       }
-
-      // Dibujar y mover partículas
       for (Particula p : particulas) {
         p.mover();
         p.dibujar();
@@ -225,8 +209,7 @@ void draw() {
     }
   }
 
-
-  // Ilustraciones 1 y 2: Espiral y ojo (0 – 43 seg)
+  // Ilustración 1 y 2 (espiral y ojo)
   else if (currentTime < 43) {
     if (tiempo > 37) {
       transicion = true;
@@ -236,14 +219,11 @@ void draw() {
     pushMatrix();
     translate(width / 2, height / 2);
     scale(zoom);
-
     dibujarEspiralPsy();
-
     float vibracion = sin(frameCount * 0.2) * 5;
     image(ojo, vibracion, vibracion, 100, 100);
     popMatrix();
 
-    // Texto flotante durante primeros 10 segundos
     if (tiempo < 10) {
       fill(255);
       textFont(miFuente);
@@ -252,13 +232,59 @@ void draw() {
     }
   }
 
+  // ESCENA FINAL
+  else if (currentTime > 99) {
+    float fadeOutAlpha = map(currentTime, 99, 108, 255, 0);
+    background(0, 0, 0, 255 - fadeOutAlpha);
+
+    noFill();
+    stroke(255, fadeOutAlpha);
+    strokeWeight(2);
+    float sep = 150;
+    ellipse(width / 2 - sep, height / 2, 100, 180);
+    ellipse(width / 2 + sep, height / 2, 100, 180);
+
+    fill(255, fadeOutAlpha);
+    textFont(miFuente);
+    textAlign(CENTER, CENTER);
+    textSize(22);
+    float desplazamientoY = sin(frameCount * 0.05) * 5;
+    text("I miss you, but I’m better off now.", width / 2, height * 0.8 + desplazamientoY);
+
+    if (currentTime >= 105 && soundfile.isPlaying()) {
+      float volumen = map(currentTime, 105, 108, 1.0, 0.0);
+      volumen = constrain(volumen, 0, 1);
+      soundfile.amp(volumen);
+
+      if (currentTime >= 108) {
+        soundfile.stop();
+        noLoop();
+      }
+    }
+  }
+
   // Mostrar letra todo el tiempo si está activada
   if (mostrarTexto && lineaActual != "") {
-    fill(255);
+    fill(textoColor);
     textFont(miFuente);
     textAlign(CENTER, CENTER);
     textSize(20);
     text(lineaActual, width / 2, height * 0.88);
+  }
+  // Indicaciones visuales en pantalla
+  fill(180);
+  textFont(miFuente);
+  textSize(16);
+  textAlign(LEFT, TOP);
+
+  if (currentTime < 43 || (currentTime >=75 && currentTime <=99)) {
+    text("Mueve el mouse para cambiar el color de fondo", 20, 20);
+  }
+
+  text("Presiona la barra espaciadora para quitar la letra", 20, 45);
+
+  if (currentTime > 99) {
+    text("Presiona el mouse para cambiar la letra de color", 20, 70);
   }
 }
 
@@ -287,13 +313,13 @@ PImage crearOjoVibrante() {
   pg.background(0, 0);
   pg.stroke(255);
   pg.fill(255);
-  pg.ellipse(60, 60, 80, 45); // parte blanca
+  pg.ellipse(60, 60, 80, 45);
   pg.fill(50, 0, 255);
-  pg.ellipse(60, 60, 25, 25); // iris
+  pg.ellipse(60, 60, 25, 25);
   pg.fill(0);
-  pg.ellipse(60, 60, 12, 12); // pupila
+  pg.ellipse(60, 60, 12, 12);
   pg.fill(255, 100);
-  pg.ellipse(65, 55, 8, 8); // reflejo
+  pg.ellipse(65, 55, 8, 8);
   pg.endDraw();
   return pg.get();
 }
@@ -301,7 +327,7 @@ PImage crearOjoVibrante() {
 void loadImageEvent(int i) {
   switch (i) {
   default:
-    image(mom3, width/2, height/2, width, height);
+    image(mom3, width / 2, height / 2, width, height);
   }
 }
 
@@ -314,4 +340,11 @@ void keyPressed() {
 void mouseMoved() {
   fondo = color(230, 200, 255);
   ultimoMovimientoMouse = millis();
+}
+
+void mousePressed() {
+  // Cambia el color del texto en escena final
+  if (tiempo > 99) {
+    textoColor = color(random(100, 255), random(100, 255), random(100, 255));
+  }
 }
