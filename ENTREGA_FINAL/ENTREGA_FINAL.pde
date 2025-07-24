@@ -210,7 +210,7 @@ void draw() {
     }
   }
 
-  // Ilustración 1 y 2 (espiral y ojo)
+ // Ilustración 1 y 2 (espiral y ojo)
   else if (currentTime < 43) {
     if (tiempo > 37) {
       transicion = true;
@@ -232,6 +232,7 @@ void draw() {
       text("Pero aún se siente bonito...", width / 2, height * 0.1);
     }
   }
+  
 
   // ESCENA FINAL
   else if (currentTime > 99) {
