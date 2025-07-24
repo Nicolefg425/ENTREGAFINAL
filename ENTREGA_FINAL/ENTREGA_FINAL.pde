@@ -1,4 +1,5 @@
-//Sonido //<>//
+//Sara Pacheco, Maite Figueroa y Nicole Fernandez //<>//
+//Sonido
 import processing.sound.*;
 import processing.sound.FFT;
 SoundFile soundfile;
